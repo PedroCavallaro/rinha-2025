@@ -1,0 +1,31 @@
+name: Check lint and Warnings (API)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Run Clippy on API
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api  
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: clippy
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run cargo fmt
+        run: cargo fmt --check
