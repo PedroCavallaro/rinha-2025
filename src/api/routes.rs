@@ -5,12 +5,11 @@ use actix_web::{
     web::{Data, Json, Query},
 };
 use chrono::Utc;
-use redis::AsyncTypedCommands;
 
 use crate::{
     api::{create_payment::Payment, get_summary::SummaryQuery, state::AppState},
-    core::{ApiError, PaymentProcessor, error::Error, get_summary::get_summary},
-    models::{PaymentProcessorsSummary, PaymentSummary, QueuedPayment},
+    core::{ApiError, error::Error, get_summary::get_summary},
+    models::QueuedPayment,
 };
 
 #[post("/payments")]
