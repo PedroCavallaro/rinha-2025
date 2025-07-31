@@ -16,7 +16,7 @@ impl fmt::Display for PaymentProcessor {
 
 impl PaymentProcessor {
     pub fn summary_key(payment_processor: &PaymentProcessor) -> String {
-        let key = format!("summary:{}", payment_processor);
+        let key = format!("summary:{payment_processor}");
 
         key
     }
