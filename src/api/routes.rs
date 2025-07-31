@@ -8,7 +8,7 @@ use chrono::Utc;
 
 use crate::{
     api::{create_payment::Payment, get_summary::SummaryQuery, state::AppState},
-    core::{ApiError, error::Error, get_summary::get_summary},
+    core::{ApiError, Error, get_summary::get_summary},
     models::QueuedPayment,
 };
 
