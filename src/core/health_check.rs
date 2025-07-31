@@ -6,13 +6,30 @@ use std::{
     time::Duration,
 };
 
-use reqwest::{Client, Method, Request, Url};
+use reqwest::Client;
+use serde::Deserialize;
 
-use crate::{config::CONFIG, models::HealtCheckResponse};
+use crate::config::CONFIG;
 
-use super::{PaymentProcessor, error::Result};
+use super::PaymentProcessor;
 
 pub static USE_FALLBACK: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(false));
+
+#[derive(Default, Debug, Deserialize)]
+pub struct HealtCheckResponse {
+    pub failing: bool,
+    #[serde(rename = "minResponseTime")]
+    pub min_response_time: u16,
+}
+
+impl HealtCheckResponse {
+    pub fn new(failing: bool, min_response_time: u16) -> Self {
+        Self {
+            failing,
+            min_response_time,
+        }
+    }
+}
 
 pub struct HealthChecker {}
 

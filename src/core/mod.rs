@@ -1,4 +1,5 @@
 pub mod error;
+pub mod get_summary;
 pub mod health_check;
 pub mod payment_processor;
 

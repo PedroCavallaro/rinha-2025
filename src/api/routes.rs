@@ -1,23 +1,17 @@
 use actix_web::{
-    HttpResponse, Responder, get, post,
+    HttpResponse, Responder, get,
+    http::StatusCode,
+    post,
     web::{Data, Json, Query},
 };
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use redis::AsyncTypedCommands;
-use serde::Deserialize;
 
 use crate::{
-    api::state::AppState,
-    config::CONFIG,
-    core::{PaymentProcessor, error::Error},
-    models::{Payment, PaymentProcessorsSummary, PaymentSummary, QueuedPayment},
+    api::{create_payment::Payment, get_summary::SummaryQuery, state::AppState},
+    core::{ApiError, PaymentProcessor, error::Error, get_summary::get_summary},
+    models::{PaymentProcessorsSummary, PaymentSummary, QueuedPayment},
 };
-
-#[derive(Debug, Deserialize)]
-struct SummaryQuery {
-    from: Option<DateTime<Utc>>,
-    to: Option<DateTime<Utc>>,
-}
 
 #[post("/payments")]
 async fn payments(body: Json<Payment>, state: Data<AppState>) -> Result<impl Responder, Error> {
@@ -38,52 +32,15 @@ async fn payments(body: Json<Payment>, state: Data<AppState>) -> Result<impl Res
 async fn summary(
     query: Query<SummaryQuery>,
     state: Data<AppState>,
-) -> Result<impl Responder, Error> {
-    let mut conn = state.pool.get().await?;
+) -> Result<impl Responder, ApiError> {
+    let conn = state.pool.get().await;
 
-    let from = match query.from {
-        Some(val) => val.timestamp(),
-        None => 1,
-    };
+    if conn.is_err() {
+        return Err(ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            "erro".to_string(),
+        ));
+    }
 
-    let to = match query.to {
-        Some(val) => val.timestamp(),
-        None => i64::MAX,
-    };
-
-    let total = conn
-        .zrangebyscore(
-            PaymentProcessor::summary_key(&PaymentProcessor::Default),
-            from,
-            to,
-        )
-        .await?;
-
-    let total_fallabck = conn
-        .zrangebyscore(
-            PaymentProcessor::summary_key(&PaymentProcessor::Fallback),
-            from,
-            to,
-        )
-        .await?;
-
-    let total_amount_default: f64 = total.iter().map(|e| e.parse::<f64>().unwrap_or(0.0)).sum();
-
-    let total_amount_fallback: f64 = total_fallabck
-        .iter()
-        .map(|e| e.parse::<f64>().unwrap_or(0.0))
-        .sum();
-
-    let summary = PaymentProcessorsSummary::new(
-        PaymentSummary {
-            total_amount: total_amount_default,
-            total_requests: total.len() as u32,
-        },
-        PaymentSummary {
-            total_requests: total_fallabck.len() as u32,
-            total_amount: total_amount_fallback,
-        },
-    );
-
-    Ok(HttpResponse::Ok().json(summary))
+    get_summary(conn.unwrap(), query).await
 }
