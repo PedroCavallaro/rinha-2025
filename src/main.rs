@@ -10,10 +10,11 @@ use rinha::{
     api::{
         routes::{payments, summary},
         state::AppState,
-    }, config::CONFIG, core::{
-        health_check::HealthChecker,
-        payment_processor::PaymentProcessor, 
-    }, models::QueuedPayment, queue::payment_consumer::PaymentsConsumer
+    },
+    config::CONFIG,
+    core::{health_check::HealthChecker, payment_processor::PaymentProcessor},
+    models::QueuedPayment,
+    queue::payment_consumer::PaymentsConsumer,
 };
 use tokio::sync::mpsc;
 
@@ -29,13 +30,14 @@ async fn main() -> std::io::Result<()> {
 
     let client = Arc::new(Client::new());
 
+    HealthChecker::start(Arc::clone(&client));
+
     tokio::spawn(async move {
-        let health_checker = HealthChecker::new(Arc::clone(&client));
         let redis = corotine_pool.get().await.unwrap();
-        let mut queue_processor = PaymentsConsumer::new(health_checker, client, redis);
+        let mut queue_processor = PaymentsConsumer::new(client, redis);
 
         while let Some(payment) = reciever.recv().await {
-            let res = queue_processor
+            let _ = queue_processor
                 .handle_payment(PaymentProcessor::Default, payment)
                 .await;
         }

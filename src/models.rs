@@ -23,6 +23,12 @@ pub struct PaymentProcessorsSummary {
     fallback: PaymentSummary,
 }
 
+impl PaymentProcessorsSummary {
+    pub fn new(default: PaymentSummary, fallback: PaymentSummary) -> Self {
+        Self { default, fallback }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PaymentSummary {
     #[serde(rename = "totalRequests")]
@@ -33,9 +39,9 @@ pub struct PaymentSummary {
 
 #[derive(Default, Debug, Deserialize)]
 pub struct HealtCheckResponse {
-    failing: bool,
+    pub failing: bool,
     #[serde(rename = "minResponseTime")]
-    min_response_time: u16,
+    pub min_response_time: u16,
 }
 
 impl HealtCheckResponse {
